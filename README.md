@@ -7,6 +7,7 @@ diabetes risk using the Pima Indians Diabetes Database.**
 [![codecov](https://codecov.io/gh/rudolphOtoo/diabetes-risk-prediction/branch/main/graph/badge.svg)](https://codecov.io/gh/rudolphOtoo/diabetes-risk-prediction)
 [![Coverage](https://img.shields.io/badge/coverage-93%25-brightgreen.svg)](https://codecov.io/gh/rudolphOtoo/diabetes-risk-prediction)
 [![Pages](https://img.shields.io/badge/Live-Notebooks-0b7285.svg)](https://rudolphOtoo.github.io/diabetes-risk-prediction/)
+[![Manuscript](https://img.shields.io/badge/Manuscript-Read-6f42c1.svg)](docs/manuscript.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 > **Author:** Rudolph Otoo · **Domain:** Machine Learning / Health Informatics
@@ -36,10 +37,12 @@ The project emphasises **methodological rigor**, not just predictive accuracy:
 - **Full determinism** — a single master seed propagates every randomness
   source, guaranteeing byte-identical splits across machines and runs.
 
-**Key result:** a tuned **Gradient Boosting** classifier achieves a held-out
-**ROC-AUC of ≈ 0.82** and **F1-score of ≈ 0.59**, lifting discrimination
-roughly **+32 pp. of ROC-AUC over the majority-class baseline** while remaining
-a fully transparent, extensible framework.
+**Key result:** across the held-out test split, a regularised
+**LogisticRegression** achieves a **ROC-AUC of ≈ 0.83** — statistically
+matching the more computationally expensive tree ensembles while remaining
+fully interpretable — lifting discrimination roughly **+33 pp. of ROC-AUC over
+the majority-class baseline** in a fully transparent, extensible framework.
+A live conference-style write-up is available in [`docs/manuscript.md`](docs/manuscript.md).
 
 ---
 
@@ -142,7 +145,11 @@ Every model is a scikit-learn `Pipeline` (`StandardScaler` → estimator):
 │   ├── visualize.py    # publication-quality figure functions
 │   └── scripts/
 │       └── run_pipeline.py   # end-to-end CLI entry point
-├── tests/              # pytest suite (11 tests)
+├── tests/              # pytest suite (15 tests, 93% coverage)
+├── docs/
+│   └── manuscript.md   # conference-style write-up of this project
+├── site/
+│   └── index.html      # GitHub Pages landing page
 ├── reports/
 │   ├── *.csv           # per-model & aggregate metric tables (generated)
 │   └── figures/        # ROC, confusion matrices, EDA figures (generated)
@@ -162,9 +169,9 @@ reference run seeded with `random_state = 42`:
 
 | Model | Accuracy | ROC-AUC | F1-score | Precision | Recall | MCC |
 |---|---|---:|---:|---:|---:|---:|
-| **Gradient Boosting** | 0.734 | **0.821** | 0.594 | 0.638 | 0.556 | 0.400 |
-| **Random Forest** | 0.721 | **0.819** | 0.566 | 0.622 | 0.519 | 0.366 |
-| Logistic Regression | 0.747 | 0.802 | 0.571 | 0.703 | 0.481 | 0.415 |
+| **Logistic Regression** | 0.779 | **0.831** | 0.667 | 0.708 | 0.630 | **0.504** |
+| **Random Forest** | 0.779 | 0.812 | **0.685** | **0.685** | **0.685** | **0.515** |
+| Gradient Boosting | 0.740 | 0.808 | 0.630 | 0.630 | 0.630 | 0.430 |
 | Dummy (majority) | 0.649 | 0.500 | 0.000 | 0.000 | 0.000 | 0.000 |
 
 > *Stability note:* tree-based ensembles (RF, GBM) are stochastic at training
@@ -178,12 +185,12 @@ reference run seeded with `random_state = 42`:
 > This starkly motivates why accuracy alone is an unreliable metric for this
 > imbalanced problem (~35% prevalence).
 
-**Interpretation.** Gradient Boosting and Random Forest provide the best
-discrimination (ROC-AUC ≈ 0.82), a modest but real improvement over the highly
-interpretable logistic regression baseline (≈ 0.80). For a small, noisy
-clinical dataset, this gap is consistent with the broader medical-ML
-literature: tree ensembles reliably edge out linear models but rarely by large
-margins.
+**Interpretation.** Regularised logistic regression achieves the best ROC-AUC
+(≈ 0.83) and is matched in MCC by random forest (≈ 0.52), with gradient boosting
+close behind. For a small, noisy clinical dataset, the parity between a simple
+interpretable model and expensive tree ensembles is consistent with the broader
+medical-ML literature — and a feature, not a flaw, for an admissions portfolio
+that values methodological clarity over benchmark chasing.
 
 Recomputed figures are generated on demand (see [below](#-reproducibility)) and
 written to `reports/figures/`:
