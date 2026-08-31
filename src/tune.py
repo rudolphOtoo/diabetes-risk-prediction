@@ -6,10 +6,12 @@ hyperparameters on the full training set.
 
 Strict data-hygiene protocol
 ----------------------------
-Hyperparameter optimisation is always performed on the **training** split
-only. The validation (dev) set is held aside exclusively for this purpose.
+Hyperparameter optimisation is always performed on the **training** split only,
+using *stratified K-fold cross-validation* entirely within those training rows.
 The held-out **test** set is reserved exclusively for the final, irrevocable
-evaluation reported in the manuscript.
+evaluation reported in the manuscript. The optional validation (dev) partition
+produced by ``split_features_target`` is kept as an independent holdout for
+future use but is *not* consumed by this tuning path.
 
 This strict partitioning eliminates two of the most common methodological
 pitfalls in published medical ML studies:
@@ -65,30 +67,20 @@ def tune_model(
     """
     settings = settings or Settings()
     pipeline: Pipeline = build_pipeline(model_name, random_seed=settings.random_seed)
-    param_grid: dict[str, list] = get_param_grid(model_name, random_seed=settings.random_seed)
+    param_grid: dict[str, list] = get_param_grid(model_name)
     cv_splitter = get_kfold(settings)
 
-    if param_grid:
-        search = GridSearchCV(
-            estimator=pipeline,
-            param_grid=param_grid,
-            cv=cv_splitter,
-            scoring=settings.scoring,
-            refit=True,
-            n_jobs=-1,
-            verbose=0,
-        )
-    else:
-        # No hyperparameters to tune; just fit the pipeline.
-        search = GridSearchCV(
-            estimator=pipeline,
-            param_grid={},  # trivial grid; single point
-            cv=cv_splitter,
-            scoring=settings.scoring,
-            refit=True,
-            n_jobs=-1,
-            verbose=0,
-        )
+    # A single GridSearchCV handles both the tunable and the trivial
+    # (empty) grid: with no candidates it simply fits the estimator once.
+    search = GridSearchCV(
+        estimator=pipeline,
+        param_grid=param_grid,
+        cv=cv_splitter,
+        scoring=settings.scoring,
+        refit=True,
+        n_jobs=-1,
+        verbose=0,
+    )
 
     search.fit(X_train, y_train)
     best_pipeline: Pipeline = search.best_estimator_

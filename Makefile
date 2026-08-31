@@ -61,9 +61,9 @@ test:
 	$(PYTHON_V) -m pytest tests/ -v
 
 install-dev:
-	@echo "▸ Installing development dependencies (ruff) ..."
-	$(PIP) install -q ruff
-	@echo "✓ Done."
+	@echo "▸ Installing package (editable) + development dependencies ..."
+	$(PIP) install -q -e ".[dev]"
+	@echo "✓ Done. Dev tools available: pytest, pytest-cov, ruff, nbconvert."
 
 lint:
 	@echo "▸ Running ruff linter ..."

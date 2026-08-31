@@ -18,6 +18,8 @@ validation, and test membership lists when the master seed is unchanged.
 
 from __future__ import annotations
 
+import zlib
+
 import pandas as pd
 from sklearn.model_selection import StratifiedKFold, train_test_split
 
@@ -77,8 +79,12 @@ def _derived_random_state(master_seed: int, context_label: str = "default") -> i
         A deterministic 32-bit integer seed suitable for scikit-learn's
         ``random_state`` parameter.
     """
-    combined_seed: int = hash((master_seed, context_label)) % (2**32)
-    return combined_seed
+    # NOTE: Python's built-in `hash()` is salted per-process (hash
+    # randomization via PYTHONHASHSEED), so it MUST NOT be used here -- it would
+    # produce different splits across interpreters/machines. `zlib.crc32` over
+    # a stable byte encoding is a deterministic, cross-process 32-bit hash.
+    key: bytes = f"{master_seed}:{context_label}".encode()
+    return zlib.crc32(key) & 0xFFFFFFFF
 
 
 def split_features_target(

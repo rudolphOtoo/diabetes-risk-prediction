@@ -57,7 +57,7 @@ def evaluate_model(
     *,
     model_name: str = "model",
     export_path: Path | None = None,
-) -> dict[str, float]:
+) -> dict[str, float | str]:
     """Compute and optionally persist a complete evaluation profile.
 
     Parameters
@@ -75,8 +75,10 @@ def evaluate_model(
 
     Returns
     -------
-    dict[str, float]
-        Metric name → value mapping.
+    dict[str, float | str]
+        Metric name → value mapping (``model_name`` is a string; numeric
+        metrics are floats, with ``roc_auc`` set to ``float('nan')`` for
+        estimators without ``predict_proba``).
     """
     # Determine the estimator name (last stage) to call predict_proba.
     model_stage = fitted_pipeline.named_steps["model"]
@@ -84,7 +86,7 @@ def evaluate_model(
 
     y_pred: np.ndarray = fitted_pipeline.predict(X_test)
 
-    metrics: dict[str, float] = {
+    metrics: dict[str, float | str] = {
         "model_name": model_name,  # kept for CSV readability
         "accuracy": round(accuracy_score(y_test, y_pred), 4),
         "f1_score": round(f1_score(y_test, y_pred, zero_division=0), 4),
@@ -142,7 +144,7 @@ def aggregate_benchmark_tables(
     pandas.DataFrame
         Models as rows, metrics as columns; sorted descending by ``roc_auc``.
     """
-    rows: list[dict[str, float]] = []
+    rows: list[dict[str, float | str]] = []
     for model_name, metric_dict in results.items():
         row = metric_dict.copy()
         row["model_name"] = model_name

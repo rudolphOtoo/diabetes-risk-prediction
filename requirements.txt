@@ -5,9 +5,9 @@
 #   python -m venv .venv && .venv/bin/activate
 #   pip install -r requirements.txt
 #
-# Note: only the core research stack is listed. Pip will resolve exact
-# versions automatically. Pin upper bounds only if reproducibility is
-# critical (use a lock file instead of upper-bounding here).
+# Note: only the core research stack is listed. Upper bounds are pinned for
+# reproducibility (a breaking package release must not silently alter results);
+# for byte-exact pinning generate a lock file with `pip freeze > requirements.lock`.
 # =============================================================================
 
 # ── Core scientific stack ─────────────────────────────────────────────────────

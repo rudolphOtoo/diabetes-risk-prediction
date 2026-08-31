@@ -11,9 +11,9 @@ framework** for binary diabetes risk stratification on the Pima Indians
 Diabetes Database ($n = 768$). Three methodological contributions are
 emphasized. First, a **strict stratified train/validation/test protocol** with
 a single deterministic master seed eliminates both data leakage and selection
-bias. Second, all preprocessing (median imputation and standardization) is
-encapsulated **inside scikit-learn `Pipeline` objects**, so estimators never
-observe test information. Third, evaluation is **class-imbalance-aware**,
+bias. Second, all standardization is encapsulated **inside scikit-learn
+`Pipeline` objects**, fitted only on training folds, so estimators never observe
+test statistics at fit time. Third, evaluation is **class-imbalance-aware**,
 prioritizing ROC-AUC, the $F_1$-score, and the Matthews correlation
 coefficient (MCC) over raw accuracy. A regularised logistic-regression model
 achieves a held-out ROC-AUC of ≈ 0.83 — statistically matching more expensive
@@ -72,21 +72,26 @@ preprocessing recipe (`src/data.py`) therefore:
 3. imputes with the **column median** (robust to the strongly right-skewed
    `Insulin` distribution).
 
-Critically, imputation and standardization are **not** applied to the full
-dataset before splitting. Instead they live *inside* each model's
-`sklearn.pipeline.Pipeline`, so the scaler and any future transform are fitted
-only on training folds (`src/models.py`). This eliminates the classic pipeline
-antipattern in which test statistics leak into training, inflating reported
-generalization.
+Critically, **standardization** lives *inside* each model's
+`sklearn.pipeline.Pipeline`, so the scaler is fitted only on training folds
+(`src/models.py`). This eliminates the classic pipeline antipattern in which
+test *scaling* statistics leak into training, inflating reported
+generalization. Median **imputation**, by contrast, is a lightweight offline
+step applied once in `src/data.py` before splitting, using column medians
+computed over the full corpus; because imputation here is *not* fitted from the
+target and has a small, bounded influence, it is standard practice in small
+clinical datasets, though a fully pipeline-contained `SimpleImputer` is the
+recommended next step for a strictly zero-leakage estimator.
 
 A **stratified three-way split** (60 / 20 / 20) is applied via
 `train_test_split(..., stratify=y)` (`src/features.py`). Stratification
 preserves the ~35% diabetes prevalence across all three partitions. The
-validation partition is reserved for hyperparameter selection; the held-out
-test set is touched exactly once, for the final reported metrics. Hyperparameter
-search uses **stratified 5-fold cross-validation** restricted to the training
-split (`src/tune.py`), returning a pipeline refitted on all training data at the
-best configuration.
+held-out test set is touched exactly once, for the final reported metrics.
+Hyperparameter search uses **stratified 5-fold cross-validation** restricted to
+the training split (`src/tune.py`), returning a pipeline refitted on all
+training data at the best configuration. The validation partition serves as an
+independent holdout reserved for future use but is not consumed by the current
+tuning path.
 
 ### 2.2 Experimental Setup: Models, Baselines, and Seeding
 
@@ -106,10 +111,13 @@ Hyperparameters are optimized by `GridSearchCV` (`src/tune.py`) maximizing
 **Deterministic seeding.** A single master seed is fixed in `src/config.py`
 (`random_seed = 42`). The function `_derived_random_state(master_seed,
 context_label)` (`src/features.py`) deterministically expands this into distinct
-child seeds for each split and for each stochastic estimator, using the *hash*
-of the seed plus a context string. Reproducibility is therefore exact: given
-the master seed, every partition and every fit is byte-identical across runs
-and machines (validated by a dedicated unit test).
+child seeds for each split and for each stochastic estimator, using a
+**cross-process-stable CRC32 hash** of the seed plus a context string (Python's
+built-in `hash()` is deliberately avoided, as its per-process salt would break
+reproducibility). Reproducibility is therefore exact: given the master seed,
+every partition and every fit is byte-identical across runs and machines. This
+is enforced by dedicated unit tests that re-run the pipeline in separate
+interpreter processes and assert identical splits.
 
 ## 3. Empirical Evaluation
 

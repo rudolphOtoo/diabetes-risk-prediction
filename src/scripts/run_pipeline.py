@@ -30,7 +30,9 @@ from pathlib import Path
 if __name__ == "__main__" and __package__ is None:
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
+import joblib
 import pandas as pd
+from sklearn.pipeline import Pipeline
 
 from src.config import Paths, Settings
 from src.data import process_data
@@ -72,7 +74,7 @@ def main() -> None:
 
     # ── Stage 3 ──────────────────────────────────────────────────────────
     print("\n▸ Stage 3/5: Training and tuning models ...")
-    tuned_pipelines: dict[str, pd.Series] = {}
+    tuned_pipelines: dict[str, Pipeline] = {}
     best_params_map: dict[str, dict] = {}
 
     for model_name in list_models():
@@ -87,7 +89,7 @@ def main() -> None:
 
     # ── Stage 4 ──────────────────────────────────────────────────────────
     print("\n▸ Stage 4/5: Evaluating on held-out test set ...")
-    results: dict[str, dict[str, float]] = {}
+    results: dict[str, dict[str, float | str]] = {}
     for model_name, fitted_pipe in tuned_pipelines.items():
         results[model_name] = evaluate_model(
             fitted_pipe,
@@ -103,6 +105,14 @@ def main() -> None:
     )
     print("\n  ── Benchmark comparison ──")
     print(comparison_table.to_string())
+
+    # The deployed model is the one with the best held-out ROC-AUC, selected
+    # dynamically from the actual evaluation results (never hard-coded).
+    best_models: list[str | float] = [
+        name for name, metrics in results.items() if str(metrics.get("roc_auc")) != "nan"
+    ]
+    best_model: str = max(best_models, key=lambda name: float(results[name]["roc_auc"]))
+    print(f"\n  Best held-out ROC-AUC: {best_model} ({results[best_model]['roc_auc']:.4f})")
 
     # ── Stage 5 ──────────────────────────────────────────────────────────
     print("\n▸ Stage 5/5: Generating figures ...")
@@ -123,19 +133,21 @@ def main() -> None:
         y_test,
         export_path=fig_dir / "05_confusion_matrices.png",
     )
+    # Feature importances require a tree-based estimator; fall back to
+    # gradient boosting regardless of which model had the top ROC-AUC.
+    tree_models = ["gradient_boosting", "random_forest"]
+    importance_model: str = best_model if best_model in tree_models else "gradient_boosting"
     plot_feature_importance(
-        tuned_pipelines["gradient_boosting"],
+        tuned_pipelines[importance_model],
         export_path=fig_dir / "06_feature_importance.png",
     )
 
-    # Persist the tuned Gradient Boosting pipeline (best model by default)
-    import joblib
-
+    # Persist the best-by-ROC-AUC pipeline for downstream deployment.
     joblib.dump(
-        tuned_pipelines["gradient_boosting"],
-        paths.models / "best_gradient_boosting_pipeline.joblib",
+        tuned_pipelines[best_model],
+        paths.models / f"best_{best_model}_pipeline.joblib",
     )
-    print("  ✓ Best model saved to models/best_gradient_boosting_pipeline.joblib")
+    print(f"  ✓ Best model saved to models/best_{best_model}_pipeline.joblib")
     print("\nDone.")
 
 

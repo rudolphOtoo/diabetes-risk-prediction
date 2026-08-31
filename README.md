@@ -28,8 +28,10 @@ The project emphasises **methodological rigor**, not just predictive accuracy:
 
 - **Strict data hygiene** — a three-way *train / validation / test* split with
   stratification, preventing both data leakage and selection bias.
-- **Leakage-aware preprocessing** — all imputation and scaling occurs *inside*
-  a scikit-learn `Pipeline`, so estimators never observe test information.
+- **Leakage-aware preprocessing** — standardization (scaling) is fitted *inside*
+  each scikit-learn `Pipeline` on training folds only, so estimators never
+  observe test statistics at fit time. (Median *imputation* is applied during
+  offline preprocessing; see the Limitation note.)
 - **Class-imbalance-aware evaluation** — primary metrics are **ROC-AUC** and
   **F1-score**, complemented by accuracy, precision, recall, and the Matthews
   correlation coefficient.
@@ -57,7 +59,7 @@ always available at the [latest release](https://github.com/rudolphOtoo/diabetes
 4. [Results](#-results)
 5. [Reproducibility](#-reproducibility)
 6. [Setup & Execution](#-setup--execution)
-7. [Testing](#-testing)
+7. [Quality Assurance (CI)](#-quality-assurance-ci)
 8. [Limitations & Future Work](#-limitations--future-work)
 
 ---
@@ -124,9 +126,10 @@ Every model is a scikit-learn `Pipeline` (`StandardScaler` → estimator):
 
 - **Train / validation / test split** (60 / 20 / 20) with stratification.
 - Hyperparameters tuned via **stratified 5-fold cross-validation** on the
-  training split only, optimising **ROC-AUC**.
-- The **validation set** is used exclusively during tuning; the **held-out test
-  set** is touched exactly once for the final reported metrics.
+  training split only, optimising **ROC-AUC** (in `src/tune.py`).
+- The **held-out test set** is touched exactly once, for the final reported
+  metrics. The **validation set** serves as an independent holdout (reserved
+  for future use) but is not consumed by the current tuning path.
 
 ---
 

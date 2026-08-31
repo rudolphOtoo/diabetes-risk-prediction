@@ -37,7 +37,7 @@ def list_models() -> list[str]:
     Returns
     -------
     list[str]
-        Three model identifiers: ``"dummy"``, ``"logistic_regression"``,
+        Four model identifiers: ``"dummy"``, ``"logistic_regression"``,
         ``"random_forest"``, ``"gradient_boosting"``.
     """
     return ["dummy", "logistic_regression", "random_forest", "gradient_boosting"]
@@ -128,7 +128,7 @@ def build_pipeline(model_name: str, random_seed: int = 42) -> Pipeline:
     return estimators[model_name]
 
 
-def get_param_grid(model_name: str, random_seed: int = 42) -> dict[str, list]:
+def get_param_grid(model_name: str) -> dict[str, list]:
     """Return the hyperparameter search space for a given model.
 
     All keys are prefixed with ``"model__"`` to match the ``Pipeline`` naming
@@ -139,8 +139,6 @@ def get_param_grid(model_name: str, random_seed: int = 42) -> dict[str, list]:
     ----------
     model_name : str
         One of the identifiers returned by :func:`list_models`.
-    random_seed : int
-        Forwarded to ``build_pipeline`` (included for API symmetry).
 
     Returns
     -------

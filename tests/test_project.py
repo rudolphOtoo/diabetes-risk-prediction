@@ -13,6 +13,10 @@ These tests validate the most failure-prone invariants:
 
 from __future__ import annotations
 
+import subprocess
+import sys
+from pathlib import Path
+
 import pandas as pd
 import pytest
 from sklearn.pipeline import Pipeline
@@ -20,7 +24,7 @@ from sklearn.pipeline import Pipeline
 from src.config import Settings
 from src.data import FEATURE_COLUMNS, TARGET_COLUMN, process_data
 from src.evaluate import aggregate_benchmark_tables, evaluate_model
-from src.features import split_features_target
+from src.features import _derived_random_state, split_features_target
 from src.models import build_pipeline, list_models
 from src.tune import tune_model
 
@@ -72,6 +76,36 @@ def test_split_is_reproducible() -> None:
 
     for key in ["X_train", "X_val", "X_test"]:
         assert (split_a[key].index == split_b[key].index).all(), f"{key} indices differ"
+
+
+def test_derived_seed_is_stable_across_processes() -> None:
+    """Derived seeds must NOT depend on Python's per-process hash salt.
+
+    A regression to ``hash((seed, context))`` would pass an in-process test
+    yet silently break reproducibility across machines (PYTHONHASHSEED
+    randomization). Asserting the literal CRC32 value pins it to a fixed,
+    cross-process-stable derivation.
+    """
+    assert _derived_random_state(42, "train_test") == 2826799802
+    assert _derived_random_state(42, "train_val") == _derived_random_state(42, "train_val")
+
+
+def test_split_is_reproducible_across_processes() -> None:
+    """Re-running the pipeline in a fresh interpreter must yield identical splits."""
+    code = (
+        "from src.data import process_data;"
+        "from src.features import split_features_target;"
+        "from src.config import Settings;"
+        "s=split_features_target(process_data(), settings=Settings());"
+        "print(list(s['X_test'].index))"
+    )
+    first = subprocess.run(
+        [sys.executable, "-c", code], capture_output=True, text=True, check=True
+    ).stdout
+    second = subprocess.run(
+        [sys.executable, "-c", code], capture_output=True, text=True, check=True
+    ).stdout
+    assert first == second
 
 
 @pytest.mark.parametrize("model_name", list_models())
@@ -133,7 +167,7 @@ def test_aggregate_benchmark_tables_sorts_by_roc_auc() -> None:
     assert table.index.name == "model_name"
 
 
-def test_evaluate_model_exports_csv(tmp_path) -> None:
+def test_evaluate_model_exports_csv(tmp_path: Path) -> None:
     """Evaluation should persist a metric CSV when an export path is given."""
     frame = process_data()
     splits = split_features_target(frame)
