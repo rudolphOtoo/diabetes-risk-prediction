@@ -1,7 +1,7 @@
 # A Reproducible Framework for Diabetes Risk Stratification: Leakage-Safe Pipelines and Class-Imbalance-Aware Evaluation
 
-**Author:** Rudolph Otoo ¹ ²
-¹ Department of Mathematics · ² Machine Learning & Health Informatics
+**Author:** Rudolph Otoo  
+**Affiliations:** Department of Mathematics · Machine Learning & Health Informatics
 
 ---
 **Abstract.** Type-2 diabetes is a growing global chronic-disease burden whose

@@ -5,10 +5,12 @@ on:
     branches: [main, master]
     paths:
       - "docs/manuscript.md"
+      - ".github/workflows/manuscript.yml"
   pull_request:
     branches: [main, master]
     paths:
       - "docs/manuscript.md"
+      - ".github/workflows/manuscript.yml"
   workflow_dispatch:
 
 jobs:
@@ -28,7 +30,8 @@ jobs:
 
       - name: Render manuscript to PDF
         run: |
-          pandoc docs/manuscript.md \
+          pandoc -f markdown-yaml_metadata_block \
+            docs/manuscript.md \
             -o docs/manuscript.pdf \
             --pdf-engine=xelatex \
             --variable=geometry:margin=1in \
