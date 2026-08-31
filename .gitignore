@@ -41,6 +41,16 @@ models/*.pkl
 reports/figures/*.png
 reports/*.csv
 
+# ── Results (ODE simulations & fitted-parameter tables; regenerated) ─
+results/analysis/
+results/figures/
+
+# ── Display figures embedded in the README (exceptions: keep committed) ──
+!reports/figures/04_roc_curves.png
+!reports/figures/05_confusion_matrices.png
+!results/figures/seird_trajectories.png
+!results/figures/seird_phase_portrait.png
+
 # ── GitHub Pages site (generated notebook HTML; keep the index landing) ─
 site/01_eda.html
 site/02_modeling.html

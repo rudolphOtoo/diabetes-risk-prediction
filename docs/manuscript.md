@@ -121,6 +121,48 @@ every partition and every fit is byte-identical across runs and machines. This
 is enforced by dedicated unit tests that re-run the pipeline in separate
 interpreter processes and assert identical splits.
 
+### 2.3 Model Selection Rationale: Statistical ML vs. Mechanistic ODEs
+
+The dual-pillar architecture of this repository is not an exercise in
+methodological hedging but a deliberate response to the fact that diabetes risk
+prediction encompasses two fundamentally different scientific questions
+operating at different scales. At the *individual* scale, the task is
+cross-sectional binary classification: assign a probability of disease onset to
+an asymptomatic patient given a fixed vector of clinical biomarkers. This is a
+statistical discrimination problem for which no first-principles differential
+equation is known, the data are i.i.d. and cross-sectional, and the appropriate
+mathematical tools are supervised classifiers — logistic regression for
+interpretability, tree ensembles for non-linear interaction capture. At the
+*population* scale, the task is to describe how disease prevalence evolves
+through a cohort over time under demographic and intervention fluxes. This is a
+dynamical systems problem governed by coupled ODEs with conservation structure,
+equilibrium thresholds, and identifiable rate parameters — the same mathematical
+scaffolding that underpins classical epidemiological theory (Anderson & May,
+1991; Kermack & McKendrick, 1927). Conflating these two scales under a single
+modelling paradigm would sacrifice the strengths of each: a classifier cannot
+predict epidemic trajectories, and an ODE system cannot stratify individual
+risk.
+
+This deliberate multi-scale design reflects a core principle of applied
+mathematical modelling: **the choice of mathematical framework should be
+dictated by the structure of the question, not by the availability of a single
+convenient method**. A statistical learner is not a poor substitute for a
+mechanistic model, nor vice versa — each is the *correct* tool for its
+respective scale of inference. By implementing both pillars with rigorous
+validation (leakage-safe pipelines, conservation-law verification,
+identifiability analysis, and reproducible seeding), this framework demonstrates
+that model selection in computational biology requires understanding *what
+question is being answered* before selecting *which mathematics to apply*. This
+is the intellectual discipline that distinguishes principled computational
+modelling from ad hoc method application, and it is the modelling philosophy
+that this repository is designed to embody.
+
+*A formal academic paradigm assessment — comprising the problem taxonomy, the
+methodological trade-off matrix across data requirements, interpretability,
+generalizability, identifiability, and clinical decision support, and the
+boundary definitions between the two pipelines — is documented in
+[`docs/paradigm_justification.md`](paradigm_justification.md).*
+
 ## 3. Empirical Evaluation
 
 ### 3.1 Performance Comparison
@@ -191,6 +233,26 @@ reuse:
   trains, and evaluates in a single command. All artefacts (`data/`, `models/`,
   `reports/`) are git-ignored and regenerated deterministically from the master
   seed.
+
+### 4.1 Mechanistic companion models
+
+Alongside the statistical classifiers, the framework exposes a
+**compartmental ODE layer** (`src/models/ode/` + `src/solvers/`) implementing
+closed **SIR** and **SEIRD** systems with explicit differential equations. The
+full LaTeX formulation and a cited **Parameter Table** binding every rate to
+units, an admissible range, and a peer-reviewed source are recorded in
+[`docs/paper/mathematical_formulation.md`](paper/mathematical_formulation.md).
+Two structural invariants — closed-population **conservation**
+($S + I + R \; (+E + D) = N$) and **non-negativity** of every state — are
+asserted programmatically on each integrated trajectory and enforced by
+dedicated unit tests. The layer also performs **synthetic-data parameter
+recoverability** analysis: simulating at known rates and re-estimating them by
+constrained least squares confirms the observability/identifiability of the
+parameters (with an explicit note that the latent SEIRD rate $\sigma$ is only
+identified when multiple compartments are observed jointly). Numerical
+integration uses `scipy.integrate.solve_ivp` (`LSODA`) with tight, config-driven
+tolerances (`rtol=1\text{e-}8`, `atol=1\text{e-}9`). A single command runs the
+whole mechanistic pipeline (`make run-model`).
 
 ## 5. Conclusion & Future Work
 

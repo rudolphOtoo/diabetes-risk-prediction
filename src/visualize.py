@@ -285,6 +285,112 @@ def plot_confusion_matrices(
     plt.close(fig)
 
 
+def plot_ode_trajectories(
+    traj: dict[str, np.ndarray],
+    *,
+    model_name: str = "ODE",
+    export_path: Path | None = None,
+    show: bool = False,
+) -> None:
+    """Stacked time-series trajectories of every compartment in an ODE system.
+
+    Parameters
+    ----------
+    traj : dict[str, numpy.ndarray]
+        Mapping compartment name to a trajectory, plus the ``"t"`` grid.
+    model_name : str
+        Label used in the title (e.g. ``"SIR"`` or ``"SEIRD"``).
+    export_path : Path | None
+        File path for saving the figure.
+    show : bool
+        Whether to call ``plt.show()``.
+
+    Returns
+    -------
+    None
+    """
+    t = traj["t"]
+    compartment_names = [k for k in traj if k != "t"]
+
+    fig, ax = plt.subplots(figsize=(7, 5))
+    for name in compartment_names:
+        ax.plot(t, traj[name], lw=2, label=name)
+    ax.set_xlabel("Time (days)")
+    ax.set_ylabel("Compartment population")
+    ax.set_title(f"{model_name.upper()} Compartment Trajectories")
+    ax.legend(frameon=True)
+    ax.grid(True, alpha=0.3)
+
+    if export_path is not None:
+        export_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(export_path)
+    if show:
+        plt.show()
+    plt.close(fig)
+
+
+def plot_ode_phase_portrait(
+    traj: dict[str, np.ndarray],
+    *,
+    model_name: str = "ODE",
+    x_name: str = "S",
+    y_name: str = "I",
+    export_path: Path | None = None,
+    show: bool = False,
+) -> None:
+    """Phase-space portrait of two compartments for an ODE system.
+
+    Parameters
+    ----------
+    traj : dict[str, numpy.ndarray]
+        Mapping compartment name to a trajectory, plus the ``"t"`` grid.
+    model_name : str
+        Label used in the title (e.g. ``"SIR"`` or ``"SEIRD"``).
+    x_name : str
+        Compartment plotted on the horizontal axis.
+    y_name : str
+        Compartment plotted on the vertical axis.
+    export_path : Path | None
+        File path for saving the figure.
+    show : bool
+        Whether to call ``plt.show()``.
+
+    Returns
+    -------
+    None
+    """
+    fig, ax = plt.subplots(figsize=(6, 5.5))
+    ax.plot(traj[x_name], traj[y_name], color="crimson", lw=2)
+    ax.scatter(
+        traj[x_name][0],
+        traj[y_name][0],
+        color="darkblue",
+        s=60,
+        zorder=5,
+        label="Start",
+    )
+    ax.scatter(
+        traj[x_name][-1],
+        traj[y_name][-1],
+        color="seagreen",
+        s=60,
+        zorder=5,
+        label="End",
+    )
+    ax.set_xlabel(f"{x_name} population")
+    ax.set_ylabel(f"{y_name} population")
+    ax.set_title(f"{model_name.upper()} Phase Portrait  ({x_name}–{y_name} plane)")
+    ax.legend(frameon=True)
+    ax.grid(True, alpha=0.3)
+
+    if export_path is not None:
+        export_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(export_path)
+    if show:
+        plt.show()
+    plt.close(fig)
+
+
 def plot_feature_importance(
     fitted_pipeline: Pipeline,
     feature_names: list[str] | None = None,

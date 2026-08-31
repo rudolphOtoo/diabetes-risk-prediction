@@ -18,7 +18,8 @@ PIP      := $(VENV)/bin/pip
 PYTHON_V := $(VENV)/bin/python
 SRC      := src
 
-.PHONY: help setup install-dev fetch-data preprocess train test lint format check all clean
+.PHONY: help setup install-dev fetch-data preprocess train test lint format check all \
+        run-model run-ode-model clean
 
 help:
 	@echo ""
@@ -29,6 +30,7 @@ help:
 	@echo "  make fetch-data     Download Pima dataset"
 	@echo "  make preprocess     Run preprocessing pipeline"
 	@echo "  make train          Train, tune, and evaluate all models"
+	@echo "  make run-model      Run the compartmental ODE model (SIR/SEIRD)"
 	@echo "  make test           Run the pytest suite"
 	@echo "  make lint           Run ruff lint checks"
 	@echo "  make format         Auto-format source with ruff"
@@ -55,6 +57,12 @@ preprocess:
 train:
 	@echo "▸ Training, tuning, and evaluating models (this may take a few minutes) ..."
 	$(PYTHON_V) -m src.scripts.run_pipeline
+
+run-model:
+	@echo "▸ Running the compartmental ODE model (default: SIR) ..."
+	$(PYTHON_V) -m src.scripts.run_ode_model
+
+run-ode-model: run-model
 
 test:
 	@echo "▸ Running pytest suite ..."
@@ -92,5 +100,7 @@ clean:
 	rm -rf reports/*.csv
 	rm -rf models/*.joblib models/*.pkl
 	rm -rf data/processed/*.csv
-	rm -rf __pycache__ src/__pycache__ src/scripts/__pycache__
+	rm -rf results/analysis/*.csv
+	rm -rf results/figures/*.png
+	rm -rf __pycache__ src/__pycache__ src/scripts/__pycache__ tests/__pycache__
 	@echo "✓ Done."

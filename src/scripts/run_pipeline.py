@@ -143,6 +143,7 @@ def main() -> None:
     )
 
     # Persist the best-by-ROC-AUC pipeline for downstream deployment.
+    paths.models.mkdir(parents=True, exist_ok=True)
     joblib.dump(
         tuned_pipelines[best_model],
         paths.models / f"best_{best_model}_pipeline.joblib",

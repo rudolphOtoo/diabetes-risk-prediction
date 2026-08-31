@@ -1,7 +1,11 @@
-# Diabetes Risk Prediction: A Reproducible Machine-Learning Framework
+# Diabetes Risk Prediction: A Dual-Pillar Reproducible Modelling Framework
 
-**A rigorous, reproducible classification study for early detection of type-2
-diabetes risk using the Pima Indians Diabetes Database.**
+**A rigorous, reproducible study of type-2 diabetes risk built on two
+complementary modelling pillars:**
+**Statistical Machine Learning** *(risk prediction with class-imbalance-aware
+metrics)* **and Mechanistic Mathematical Modeling** *(SIR/SEIRD differential
+equations, parameter identifiability, and conservation-law validation)* —
+using the Pima Indians Diabetes Database and closed-population ODE systems.
 
 ![CI](https://github.com/rudolphOtoo/diabetes-risk-prediction/actions/workflows/ci.yml/badge.svg)
 [![codecov](https://codecov.io/gh/rudolphOtoo/diabetes-risk-prediction/branch/main/graph/badge.svg)](https://codecov.io/gh/rudolphOtoo/diabetes-risk-prediction)
@@ -9,6 +13,7 @@ diabetes risk using the Pima Indians Diabetes Database.**
 [![Pages](https://img.shields.io/badge/Live-Notebooks-0b7285.svg)](https://rudolphOtoo.github.io/diabetes-risk-prediction/)
 [![Manuscript](https://img.shields.io/badge/Manuscript-Read-6f42c1.svg)](docs/manuscript.md)
 [![PDF](https://img.shields.io/badge/PDF-Latest-orange.svg)](https://github.com/rudolphOtoo/diabetes-risk-prediction/releases/latest/download/manuscript.pdf)
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rudolphOtoo/diabetes-risk-prediction/blob/main/notebooks/quickstart.ipynb)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 > **Author:** Rudolph Otoo · **Domain:** Machine Learning / Health Informatics
@@ -20,11 +25,21 @@ diabetes risk using the Pima Indians Diabetes Database.**
 Diabetes mellitus is one of the fastest-growing chronic diseases worldwide, and
 early identification of at-risk individuals is critical to clinical
 intervention. This repository presents a **complete, reproducible
-machine-learning framework** for binary classification of diabetes status,
-built on the Pima Indians Diabetes Database (768 adult female patients of Pima
-Indian heritage).
+dual-pillar framework** for diabetes, built on the Pima Indians Diabetes
+Database (768 adult female patients of Pima Indian heritage):
 
-The project emphasises **methodological rigor**, not just predictive accuracy:
+1. **Statistical Machine Learning (ML)** — binary risk classification of
+   diabetes status via leakage-safe scikit-learn pipelines, evaluated with
+   class-imbalance-aware metrics.
+2. **Mechanistic Mathematical Modeling (ODE)** — closed **SIR / SEIRD**
+   compartmental differential-equation systems that model disease progression
+   deterministically, with a cited **Parameter Table**, parameter
+   **identifiability** analysis, and **conservation-law** verification.
+
+### Pillar 1 · Statistical ML
+
+The statistical pillar emphasises **methodological rigor**, not just predictive
+accuracy:
 
 - **Strict data hygiene** — a three-way *train / validation / test* split with
   stratification, preventing both data leakage and selection bias.
@@ -45,6 +60,27 @@ The project emphasises **methodological rigor**, not just predictive accuracy:
 matching the more computationally expensive tree ensembles while remaining
 fully interpretable — lifting discrimination roughly **+33 pp. of ROC-AUC over
 the majority-class baseline** in a fully transparent, extensible framework.
+
+### Pillar 2 · Mechanistic Mathematical Modeling (SIR / SEIRD)
+
+The mechanistic pillar complements the statistical classifiers with an explicit
+compartmental (ODE) modelling layer:
+
+- **Explicit differential equations** — every system
+  (`dS/dt, dI/dt, dR/dt`, plus `dE/dt, dD/dt` for SEIRD) is written out and
+  unit-tested; the full LaTeX derivation lives in
+  [`docs/paper/mathematical_formulation.md`](docs/paper/mathematical_formulation.md).
+- **Cited Parameter Table** — each rate (`β`, `γ`, `σ`, `μ`) is bound to a
+  physically admissible range with units and a peer-reviewed source, and
+  **validated at construction time**.
+- **Conservation invariant verification** — every integrated trajectory is
+  verified to satisfy $\sum S + E + I + R + D = N$ at all time points.
+- **Strict $\mathcal{R}_0$ thresholding** — the basic reproduction number
+  $\mathcal{R}_0 = \beta/\gamma$ separates growing from decaying epidemics.
+- **Parameter identifiability** — synthetic-data recoverability tests confirm
+  fitted rates reproduce the generating values; the latent SEIRD stage is
+  explicitly identified only when multiple compartments are observed jointly.
+
 A live conference-style write-up is available in
 [`docs/manuscript.md`](docs/manuscript.md), and an auto-rendered **PDF** is
 always available at the [latest release](https://github.com/rudolphOtoo/diabetes-risk-prediction/releases/latest/download/manuscript.pdf).
@@ -55,12 +91,15 @@ always available at the [latest release](https://github.com/rudolphOtoo/diabetes
 
 1. [Dataset](#-dataset)
 2. [Methodology](#-methodology)
-3. [Project Structure](#-project-structure)
-4. [Results](#-results)
-5. [Reproducibility](#-reproducibility)
-6. [Setup & Execution](#-setup--execution)
-7. [Quality Assurance (CI)](#-quality-assurance-ci)
-8. [Limitations & Future Work](#-limitations--future-work)
+3. [Model Selection Rationale](#model-selection-rationale-statistical-ml-vs-mechanistic-odes)
+4. [Visual Results Gallery](#visual-results-gallery)
+5. [Mechanistic Compartmental Modelling](#-mechanistic-compartmental-modelling)
+6. [Project Structure](#-project-structure)
+7. [Results](#-results)
+8. [Reproducibility](#-reproducibility)
+9. [Setup & Execution](#-setup--execution)
+10. [Quality Assurance (CI)](#-quality-assurance-ci)
+11. [Limitations & Future Work](#-limitations--future-work)
 
 ---
 
@@ -141,6 +180,136 @@ Every model is a scikit-learn `Pipeline`
   metrics. The **validation set** serves as an independent holdout (reserved
   for future use) but is not consumed by the current tuning path.
 
+### Model Selection Rationale: Statistical ML vs. Mechanistic ODEs
+
+The dual-pillar architecture of this repository is not an exercise in
+methodological hedging but a deliberate response to the fact that diabetes risk
+prediction encompasses two fundamentally different scientific questions
+operating at different scales. At the *individual* scale, the task is
+cross-sectional binary classification: assign a probability of disease onset to
+an asymptomatic patient given a fixed vector of clinical biomarkers. This is a
+statistical discrimination problem for which no first-principles differential
+equation is known, the data are i.i.d. and cross-sectional, and the appropriate
+mathematical tools are supervised classifiers — logistic regression for
+interpretability, tree ensembles for non-linear interaction capture. At the
+*population* scale, the task is to describe how disease prevalence evolves
+through a cohort over time under demographic and intervention fluxes. This is a
+dynamical systems problem governed by coupled ODEs with conservation structure,
+equilibrium thresholds, and identifiable rate parameters — the same mathematical
+scaffolding that underpins classical epidemiological theory (Anderson & May,
+1991; Kermack & McKendrick, 1927). Conflating these two scales under a single
+modelling paradigm would sacrifice the strengths of each: a classifier cannot
+predict epidemic trajectories, and an ODE system cannot stratify individual
+risk.
+
+This deliberate multi-scale design reflects a core principle of applied
+mathematical modelling: **the choice of mathematical framework should be
+dictated by the structure of the question, not by the availability of a single
+convenient method**. A statistical learner is not a poor substitute for a
+mechanistic model, nor vice versa — each is the *correct* tool for its
+respective scale of inference. By implementing both pillars with rigorous
+validation (leakage-safe pipelines, conservation-law verification,
+identifiability analysis, and reproducible seeding), this framework demonstrates
+that model selection in computational biology requires understanding *what
+question is being answered* before selecting *which mathematics to apply*. This
+is the intellectual discipline that distinguishes principled computational
+modelling from ad hoc method application, and it is the modelling philosophy
+that this repository is designed to embody.
+
+*A full academic paradigm assessment — including the problem taxonomy, the
+methodological trade-off matrix, and the boundary definitions between the two
+pipelines — is documented in
+[`docs/paradigm_justification.md`](docs/paradigm_justification.md).*
+
+### Visual Results Gallery
+
+The following figures summarise both modelling pillars. Statistical ML results
+are reported on the held-out test split; mechanistic ODE trajectories are
+deterministic SEIRD simulations over 365 days in a closed population of
+$N = 100{,}000$.
+
+#### Pillar 1 · Statistical ML (risk classification)
+
+**ROC curves and confusion matrices** — discrimination performance of all four
+models on the held-out test set:
+
+| ROC curves (threshold-invariant discrimination) | Confusion matrices (per-model error structure) |
+|---|---|
+| ![ROC Curves](reports/figures/04_roc_curves.png) | ![Confusion Matrices](reports/figures/05_confusion_matrices.png) |
+
+#### Pillar 2 · Mechanistic ODE (population dynamics)
+
+**SEIRD compartment trajectories and phase portrait** — deterministic disease
+progression through Susceptible → Exposed → Infectious → Recovered/Deceased over
+time:
+
+| Compartment trajectories over time | Phase portrait (S–I plane) |
+|---|---|
+| ![SEIRD Trajectories](results/figures/seird_trajectories.png) | ![SEIRD Phase Portrait](results/figures/seird_phase_portrait.png) |
+
+*(Additional SIR trajectories, phase portraits, and all six exploratory figures
+are regenerated on demand — see [Reproducibility](#-reproducibility).)*
+
+---
+
+## 🦠 Mechanistic Compartmental Modelling
+
+In addition to the statistical classifiers, the repository ships a
+**mechanistic compartmental (ODE) layer** (`src/models/ode/` + `src/solvers/`)
+that models disease progression through an explicit system of ordinary
+differential equations — the same mathematical scaffolding used in high-impact
+epidemiological modelling repositories. The full derivation, LaTeX formulation,
+and a cited **Parameter Table** live in
+[`docs/paper/mathematical_formulation.md`](docs/paper/mathematical_formulation.md).
+
+### Supported systems
+
+| Model | Compartments | ODE system (abridged) |
+|---|---|---|
+| **SIR** | `S, I, R` | `dS/dt = −βSI/N`, `dI/dt = βSI/N − γI`, `dR/dt = γI` |
+| **SEIRD** | `S, E, I, R, D` | `dS/dt = −βSI/N`, `dE/dt = βSI/N − σE`, `dI/dt = σE − (γ+μ)I`, `dR/dt = γI`, `dD/dt = μI` |
+
+Every integrated trajectory is **verified programmatically** for the two
+structural invariants that define a well-posed closed-population model:
+
+- **Conservation** — `Σ S + I + R (+ E + D) = N` at every time point;
+- **Non-negativity** — no compartment ever drops below zero.
+
+These are asserted on *every* solve by default, and are enforced by dedicated
+`pytest` tests (`tests/ode/test_conservation.py`).
+
+### Parameter table (units, bounds, sources)
+
+Each rate is bound to a physically admissible range with units and a cited
+source, and **validated at construction time** (out-of-bounds or non-finite
+rates raise immediately):
+
+| Parameter | Symbol | Units | Default | Range | Source |
+|---|---|---|---|---|---|
+| Transmission rate | `β` | day⁻¹ | 0.35 | [0, 5] | Anderson & May (1991) |
+| Recovery rate | `γ` | day⁻¹ | 1/7 | [0, 5] | Anderson & May (1991) |
+| Latent → infectious | `σ` | day⁻¹ | 1/5.2 | [0, 5] | WHO (2023) |
+| Case-fatality exit | `μ` | day⁻¹ | 0.02 | [0, 1] | CFR cohorts (2023) |
+
+### Reproducibility & numerical verification
+
+- Solver: `scipy.integrate.solve_ivp` (`LSODA`) with tight config-driven
+  tolerances (`rtol=1e-8`, `atol=1e-9`).
+- **Deterministic** random seeding via `src.solvers.seed_rng`.
+- **Synthetic-data recoverability** tests confirm the fitted rates reproduce
+  the generating values to within tolerance
+  (`tests/ode/test_fit.py`), including a documented identifiability analysis
+  for the latent SEIRD stage.
+- One command runs the whole mechanistic pipeline:
+
+```bash
+make run-model                 # default SIR
+python -m src.scripts.run_ode_model --model seird
+```
+
+Output trajectories and fitted parameters are written to
+`results/analysis/`.
+
 ---
 
 ## 📁 Project Structure
@@ -155,26 +324,42 @@ Every model is a scikit-learn `Pipeline`
 │   ├── config.py       # paths & global hyperparameter/settings dataclasses
 │   ├── data.py         # download + cleaning (type coercion, zero repair)
 │   ├── features.py     # stratified split + cross-validation + seed derivation
-│   ├── models.py       # leak-free pipelines (impute → scale → estimator)
+│   ├── models/         # mathematical model definitions
+│   │   ├── classifiers.py  # leak-free sklearn pipelines (impute → scale → estimator)
+│   │   └── ode/            # mechanistic compartmental ODE models
+│   │       ├── parameters.py # ParamTable: units, bounds, sources (validated)
+│   │       ├── base.py       # ODECompartmentalModel base + R0
+│   │       ├── sir.py        # closed SIR system + solver
+│   │       └── seird.py      # closed SEIRD system + solver
+│   ├── solvers/        # deterministic solve_ivp + least-squares parameter recovery
 │   ├── evaluate.py     # metric computation + benchmark table aggregation
 │   ├── tune.py         # GridSearchCV wrapper (strict train-only tuning)
 │   ├── visualize.py    # publication-quality figure functions
 │   └── scripts/
-│       └── run_pipeline.py   # end-to-end CLI entry point
-├── tests/              # pytest suite (15 tests, 93% coverage)
+│       ├── run_pipeline.py    # ML end-to-end CLI entry point
+│       └── run_ode_model.py   # compartmental ODE CLI entry point
+├── tests/              # pytest suite (52 tests, 93% coverage)
+│   ├── test_project.py     # ML invariants (shape, split, seeds, model training)
+│   └── ode/                # conservation, non-negativity, solvability, recoverability
 ├── docs/
-│   ├── manuscript.md      # conference-style write-up (source)
-│   └── manuscript.pdf     # auto-rendered PDF (CI → latest release)
+│   ├── manuscript.md            # conference-style ML write-up (source)
+│   ├── manuscript.pdf           # auto-rendered PDF (CI → latest release)
+│   └── paper/
+│       └── mathematical_formulation.md  # full LaTeX + Parameter Table for ODE models
 ├── site/
 │   └── index.html      # GitHub Pages landing page
 ├── reports/
 │   ├── *.csv           # per-model & aggregate metric tables (generated)
 │   └── figures/        # ROC, confusion matrices, EDA figures (generated)
+├── results/
+│   ├── analysis/       # ODE trajectories & fitted-parameter tables (generated)
+│   └── figures/        # publication-quality plots (generated)
 ├── models/             # serialised best pipeline (joblib)
 ├── requirements.txt    # pip dependency manifest
+├── requirements.lock   # byte-pinned dependency manifest
 ├── environment.yml     # conda dependency manifest
-├── pyproject.toml      # packaging metadata
-└── Makefile            # high-level orchestration (`make all`)
+├── pyproject.toml      # packaging metadata + ruff/coverage config
+└── Makefile            # high-level orchestration (`make all`, `make run-model`)
 ```
 
 ---
@@ -252,6 +437,7 @@ git clone https://github.com/rudolphOtoo/diabetes-risk-prediction.git
 cd diabetes-risk-prediction
 make setup                 # creates .venv + installs requirements
 make all                   # fetch → preprocess → train → evaluate (≈3–5 min)
+make run-model             # optional: mechanistic compartmental ODE simulation
 ```
 
 ### Option B — conda
@@ -272,8 +458,24 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 python -c "from src.data import process_data; process_data()"   # fetch + preprocess
-python -m src.scripts.run_pipeline                               # full pipeline
+python -m src.scripts.run_pipeline                               # full ML pipeline
 ```
+
+### Mechanistic ODE pipeline
+
+Run the compartmental (SIR / SEIRD) simulation end-to-end — simulation,
+conservation verification, synthetic-data parameter recovery, and trajectory
+export into `results/analysis/`:
+
+```bash
+make run-model                          # default SIR (100,000 people, 365 days)
+python -m src.scripts.run_ode_model --model seird    # choice of SIR / SEIRD
+python -m src.scripts.run_ode_model --help           # all CLI options
+```
+
+Both the ML pipeline (`make all` / `python -m src.scripts.run_pipeline`) and the
+ODE pipeline (`make run-model`) are fully deterministic and can be run
+independently from a fresh clone after `make setup`.
 
 ### Explore the notebooks
 
@@ -321,7 +523,11 @@ ruff format --check src/ tests/     # formatting
 
 The tests verify preprocessing shape/class balance, stratification, split
 reproducibility, model-tuning behaviour, and that every model trains and scores
-within valid bounds.
+within valid bounds. For the mechanistic layer, additional tests assert the
+**SIR/SEIRD conservation law** (`Σ compartments = N`), **non-negativity** of all
+states, **parameter-bound** validation, **numerical convergence** under
+tolerance refinement, and **synthetic-data parameter recoverability**
+(`tests/ode/`).
 
 ---
 

@@ -36,6 +36,9 @@ class Paths:
         Directory for exported matplotlib / seaborn figures.
     reports: Path
         Directory for machine-readable metric tables (CSV).
+    results: Path
+        Directory for simulations, fitted-parameter tables and analysis
+        outputs produced by the compartmental ODE layer.
     """
 
     raw_data: Path = REPO_ROOT / "data" / "raw"
@@ -43,6 +46,7 @@ class Paths:
     models: Path = REPO_ROOT / "models"
     figures: Path = REPO_ROOT / "reports" / "figures"
     reports: Path = REPO_ROOT / "reports"
+    results: Path = REPO_ROOT / "results"
 
 
 # ---------------------------------------------------------------------------
