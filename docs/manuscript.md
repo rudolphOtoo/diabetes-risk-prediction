@@ -265,6 +265,18 @@ held-out test set, regularised logistic regression matches tree ensembles in
 discrimination (ROC-AUC ≈ 0.83) while retaining interpretability, and all models
 decisively outperform a quality-equivalent majority-class baseline.
 
+Crucially, the two modelling pillars are deliberately complementary rather than
+competing. The statistical classifiers answer *'who is at risk?'* at the
+individual scale; the compartmental ODE layer answers *'how does prevalence
+evolve?'* at the population scale. Section 2.3 and the accompanying
+[`docs/paradigm_justification.md`](paradigm_justification.md) make the
+model-selection philosophy explicit: the choice of mathematical framework is
+dictated by the structure of the scientific question, not by the availability of
+a single convenient method. Both pipelines are fully executable —
+`make all` and `make run-model` reproduce every result from a single seed, and
+an interactive [`quickstart notebook`](../notebooks/quickstart.ipynb) runs both
+paradigms in about a minute in any browser via Google Colab.
+
 **Future work.** Three extensions are natural. (i) **Calibration.** Beyond
 discrimination, reliability requires probability calibration; a Platt- or
 isotonic-calibrated model with Brier-score reporting would quantify whether

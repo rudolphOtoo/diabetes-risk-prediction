@@ -21,19 +21,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install pandoc and a LaTeX engine
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc texlive-xetex texlive-fonts-recommended texlive-latex-recommended
+
       - name: Render manuscript to PDF
-        uses: pandoc/pandoc-action-example@v1
-        with:
-          args: >-
-            docs/manuscript.md
-            -o docs/manuscript.pdf
-            --pdf-engine=xelatex
-            --variable=geometry:margin=1in
-            --variable=fontsize=11pt
-            --variable=documentclass=article
-            --metadata=lang:en
-            --highlight-style=pygments
-            --toc
+        run: |
+          pandoc docs/manuscript.md \
+            -o docs/manuscript.pdf \
+            --pdf-engine=xelatex \
+            --variable=geometry:margin=1in \
+            --variable=fontsize=11pt \
+            --variable=documentclass=article \
+            --metadata=lang:en \
+            --highlight-style=pygments \
+            --toc \
             --toc-depth=2
 
       - name: Upload manuscript.pdf
