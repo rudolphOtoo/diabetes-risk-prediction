@@ -19,9 +19,10 @@ from sklearn.pipeline import Pipeline
 
 from src.config import Settings
 from src.data import FEATURE_COLUMNS, TARGET_COLUMN, process_data
-from src.evaluate import evaluate_model
+from src.evaluate import aggregate_benchmark_tables, evaluate_model
 from src.features import split_features_target
 from src.models import build_pipeline, list_models
+from src.tune import tune_model
 
 
 @pytest.fixture(scope="module")
@@ -93,3 +94,55 @@ def test_build_pipeline_rejects_unknown_name() -> None:
     """Unknown model identifiers must raise a descriptive ValueError."""
     with pytest.raises(ValueError):
         build_pipeline("not_a_real_model")
+
+
+def test_tune_model_returns_fitted_pipeline_and_params() -> None:
+    """Tuning must return a fitted pipeline plus a (possibly empty) param dict."""
+    frame = process_data()
+    splits = split_features_target(frame)
+    X_train, y_train = splits["X_train"], splits["y_train"]
+
+    fitted, params = tune_model("logistic_regression", X_train, y_train, settings=Settings())
+
+    assert isinstance(fitted, Pipeline)
+    assert isinstance(params, dict)
+    assert fitted.named_steps["model"] is not None
+
+
+def test_tune_model_dummy_has_no_params() -> None:
+    """The dummy baseline is hyperparameter-free and should return {}."""
+    frame = process_data()
+    splits = split_features_target(frame)
+    X_train, y_train = splits["X_train"], splits["y_train"]
+
+    _, params = tune_model("dummy", X_train, y_train, settings=Settings())
+    assert params == {}
+
+
+def test_aggregate_benchmark_tables_sorts_by_roc_auc() -> None:
+    """The aggregate table must sort models descending by ROC-AUC."""
+    table = aggregate_benchmark_tables(
+        {
+            "model_a": {"roc_auc": 0.50},
+            "model_b": {"roc_auc": 0.90},
+            "model_c": {"roc_auc": 0.70},
+        }
+    )
+    # Sorted descending → best ROC-AUC first.
+    assert table.index.tolist() == ["model_b", "model_c", "model_a"]
+    assert table.index.name == "model_name"
+
+
+def test_evaluate_model_exports_csv(tmp_path) -> None:
+    """Evaluation should persist a metric CSV when an export path is given."""
+    frame = process_data()
+    splits = split_features_target(frame)
+    X_test, y_test = splits["X_test"], splits["y_test"]
+    pipe = build_pipeline("logistic_regression", random_seed=42)
+    pipe.fit(splits["X_train"], splits["y_train"])
+
+    out = tmp_path / "metrics.csv"
+    metrics = evaluate_model(pipe, X_test, y_test, model_name="logistic", export_path=out)
+
+    assert out.exists()
+    assert "roc_auc" in metrics

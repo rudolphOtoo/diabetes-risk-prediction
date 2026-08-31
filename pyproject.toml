@@ -48,3 +48,14 @@ select = ["E", "F", "I", "UP", "B", "W"]
 
 [tool.ruff.format]
 quote-style = "double"
+
+# ── Coverage: measurement & reporting configuration ───────────────────────
+[tool.coverage.run]
+source = ["src"]
+branch = true
+omit = ["src/scripts/*", "src/visualize.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+fail_under = 60.0

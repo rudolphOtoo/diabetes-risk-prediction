@@ -4,6 +4,8 @@
 diabetes risk using the Pima Indians Diabetes Database.**
 
 ![CI](https://github.com/rudolphOtoo/diabetes-risk-prediction/actions/workflows/ci.yml/badge.svg)
+[![codecov](https://codecov.io/gh/rudolphOtoo/diabetes-risk-prediction/branch/main/graph/badge.svg)](https://codecov.io/gh/rudolphOtoo/diabetes-risk-prediction)
+[![Coverage](https://img.shields.io/badge/coverage-93%25-brightgreen.svg)](https://codecov.io/gh/rudolphOtoo/diabetes-risk-prediction)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 > **Author:** Rudolph Otoo · **Domain:** Machine Learning / Health Informatics
@@ -265,27 +267,30 @@ jupyter notebook notebooks/01_eda.ipynb
 ## 🧪 Quality Assurance (CI)
 
 The repository ships a `pytest` suite asserting the invariants that matter most
-for an admissions reviewer, plus `ruff` linting and formatting checks. All three
-run automatically via the [GitHub Actions workflow](.github/workflows/ci.yml)
-on every push / pull request — the test suite across Python 3.10–3.12, linting
-on Python 3.12. One terminal command reproduces the entire CI gate locally:
+for an admissions reviewer, a **93% unit-test coverage** gate, plus `ruff`
+linting and formatting checks. All run automatically via the [GitHub Actions
+workflow](.github/workflows/ci.yml) on every push / pull request — the test
+suite across Python 3.10–3.12, coverage and linting on Python 3.12. Coverage is
+reported to [Codecov](https://codecov.io/gh/rudolphOtoo/diabetes-risk-prediction).
+One terminal command reproduces the entire CI gate locally:
 
 ```bash
 source .venv/bin/activate
-pip install ruff            # dev dependency (also in `pyproject.toml [dev]`)
-make check                  # ruff lint + format-check + pytest -q
+pip install -e ".[dev]"              # installs pytest, pytest-cov, ruff
+make check                           # ruff lint + format-check + pytest
 ```
 
 or step-by-step:
 
 ```bash
-python -m pytest tests/ -v          # run all unit tests
+python -m pytest tests/ -v --cov=src --cov-fail-under=60   # tests + coverage gate
 ruff check src/ tests/              # lint
 ruff format --check src/ tests/     # formatting
 ```
 
 The tests verify preprocessing shape/class balance, stratification, split
-reproducibility, and that every model trains and scores within valid bounds.
+reproducibility, model-tuning behaviour, and that every model trains and scores
+within valid bounds.
 
 ---
 

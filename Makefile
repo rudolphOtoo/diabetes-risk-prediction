@@ -76,8 +76,8 @@ format:
 check: lint
 	@echo "▸ Verifying formatting ..."
 	$(PYTHON_V) -m ruff format --check src/ tests/
-	@echo "▸ Running pytest suite ..."
-	$(PYTHON_V) -m pytest tests/ -q
+	@echo "▸ Running pytest with coverage gate ..."
+	$(PYTHON_V) -m pytest tests/ -q --cov=src --cov-fail-under=60
 
 all: fetch-data preprocess train
 	@echo ""
