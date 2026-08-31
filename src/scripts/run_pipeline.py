@@ -20,6 +20,7 @@ This script:
     5. Evaluates every model on the held-out test set.
     6. Saves all metrics, figures, and the tuned final model.
 """
+
 from __future__ import annotations
 
 import sys
@@ -29,14 +30,13 @@ from pathlib import Path
 if __name__ == "__main__" and __package__ is None:
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-import numpy as np
 import pandas as pd
 
 from src.config import Paths, Settings
 from src.data import process_data
 from src.evaluate import aggregate_benchmark_tables, evaluate_model
 from src.features import split_features_target
-from src.models import build_pipeline, list_models
+from src.models import list_models
 from src.tune import tune_model
 from src.visualize import (
     plot_confusion_matrices,
@@ -62,9 +62,7 @@ def main() -> None:
 
     # ── Stage 2 ──────────────────────────────────────────────────────────
     print("\n▸ Stage 2/5: Splitting data (train / val / test) ...")
-    splits: dict[str, pd.DataFrame | pd.Series] = split_features_target(
-        frame, settings=settings
-    )
+    splits: dict[str, pd.DataFrame | pd.Series] = split_features_target(frame, settings=settings)
     X_train, X_val, X_test = splits["X_train"], splits["X_val"], splits["X_test"]
     y_train, y_val, y_test = splits["y_train"], splits["y_val"], splits["y_test"]
 
@@ -114,11 +112,15 @@ def main() -> None:
     plot_correlation_heatmap(frame, export_path=fig_dir / "02_correlation_heatmap.png")
     plot_feature_distributions(X_train, export_path=fig_dir / "03_feature_distributions.png")
     plot_roc_curves(
-        tuned_pipelines, X_test, y_test,
+        tuned_pipelines,
+        X_test,
+        y_test,
         export_path=fig_dir / "04_roc_curves.png",
     )
     plot_confusion_matrices(
-        tuned_pipelines, X_test, y_test,
+        tuned_pipelines,
+        X_test,
+        y_test,
         export_path=fig_dir / "05_confusion_matrices.png",
     )
     plot_feature_importance(
@@ -128,6 +130,7 @@ def main() -> None:
 
     # Persist the tuned Gradient Boosting pipeline (best model by default)
     import joblib
+
     joblib.dump(
         tuned_pipelines["gradient_boosting"],
         paths.models / "best_gradient_boosting_pipeline.joblib",

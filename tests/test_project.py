@@ -10,18 +10,18 @@ These tests validate the most failure-prone invariants:
 * deterministic seeds actually reproduce identical splits,
 * every registered model trains and produces a valid ROC-AUC on a toy set.
 """
+
 from __future__ import annotations
 
-import numpy as np
 import pandas as pd
 import pytest
 from sklearn.pipeline import Pipeline
 
 from src.config import Settings
 from src.data import FEATURE_COLUMNS, TARGET_COLUMN, process_data
+from src.evaluate import evaluate_model
 from src.features import split_features_target
 from src.models import build_pipeline, list_models
-from src.evaluate import evaluate_model
 
 
 @pytest.fixture(scope="module")

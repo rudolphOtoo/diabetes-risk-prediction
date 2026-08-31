@@ -50,10 +50,7 @@ class Paths:
 # ---------------------------------------------------------------------------
 
 #: UCI-hosted mirror of the Pima Indians Diabetes Database.
-DATA_URL: str = (
-    "https://raw.githubusercontent.com/"
-    "plotly/datasets/master/diabetes.csv"
-)
+DATA_URL: str = "https://raw.githubusercontent.com/plotly/datasets/master/diabetes.csv"
 
 #: Name of the raw CSV once downloaded.
 RAW_FILENAME: str = "diabetes_raw.csv"

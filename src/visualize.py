@@ -23,12 +23,9 @@ import seaborn as sns
 from sklearn.metrics import (
     ConfusionMatrixDisplay,
     RocCurveDisplay,
-    confusion_matrix,
-    roc_curve,
 )
 from sklearn.pipeline import Pipeline
 
-from .config import Paths
 from .data import FEATURE_COLUMNS
 
 
@@ -79,7 +76,14 @@ def plot_target_distribution(
     """
     fig, ax = plt.subplots(figsize=(6, 4))
     counts = y.value_counts().sort_index()
-    sns.barplot(x=counts.index.astype(str), y=counts.values, ax=ax, hue=counts.index.astype(str), palette="viridis", legend=False)
+    sns.barplot(
+        x=counts.index.astype(str),
+        y=counts.values,
+        ax=ax,
+        hue=counts.index.astype(str),
+        palette="viridis",
+        legend=False,
+    )
     ax.set_xlabel("Outcome (0 = No diabetes, 1 = Diabetes)")
     ax.set_ylabel("Number of patients")
     ax.set_title("Class Distribution in Pima Indians Diabetes Dataset")
@@ -266,7 +270,7 @@ def plot_confusion_matrices(
     if n_models == 1:
         axes = [axes]
 
-    for ax, (name, pipe) in zip(axes, fitted_pipelines.items()):
+    for ax, (name, pipe) in zip(axes, fitted_pipelines.items(), strict=True):
         ConfusionMatrixDisplay.from_estimator(pipe, X_test, y_test, ax=ax, cmap="Blues")
         ax.set_title(name, fontsize=11, fontweight="bold")
 

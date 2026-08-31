@@ -18,17 +18,21 @@ PIP      := $(VENV)/bin/pip
 PYTHON_V := $(VENV)/bin/python
 SRC      := src
 
-.PHONY: help setup fetch-data preprocess train evaluate test all clean
+.PHONY: help setup install-dev fetch-data preprocess train test lint format check all clean
 
 help:
 	@echo ""
 	@echo "  diabetes-risk-prediction"
 	@echo "  ─────────────────────────────────────"
 	@echo "  make setup          Create venv and install deps"
+	@echo "  make install-dev    Install dev deps (ruff) into venv"
 	@echo "  make fetch-data     Download Pima dataset"
 	@echo "  make preprocess     Run preprocessing pipeline"
 	@echo "  make train          Train, tune, and evaluate all models"
 	@echo "  make test           Run the pytest suite"
+	@echo "  make lint           Run ruff lint checks"
+	@echo "  make format         Auto-format source with ruff"
+	@echo "  make check          Lint + format-report + tests (CI-equivalent)"
 	@echo "  make all            fetch-data → preprocess → train"
 	@echo "  make clean          Remove generated artefacts"
 	@echo ""
@@ -55,6 +59,25 @@ train:
 test:
 	@echo "▸ Running pytest suite ..."
 	$(PYTHON_V) -m pytest tests/ -v
+
+install-dev:
+	@echo "▸ Installing development dependencies (ruff) ..."
+	$(PIP) install -q ruff
+	@echo "✓ Done."
+
+lint:
+	@echo "▸ Running ruff linter ..."
+	$(PYTHON_V) -m ruff check src/ tests/
+
+format:
+	@echo "▸ Formatting source with ruff ..."
+	$(PYTHON_V) -m ruff format src/ tests/
+
+check: lint
+	@echo "▸ Verifying formatting ..."
+	$(PYTHON_V) -m ruff format --check src/ tests/
+	@echo "▸ Running pytest suite ..."
+	$(PYTHON_V) -m pytest tests/ -q
 
 all: fetch-data preprocess train
 	@echo ""

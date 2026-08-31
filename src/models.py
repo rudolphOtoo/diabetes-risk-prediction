@@ -24,14 +24,11 @@ No changes to the evaluation or tuning modules are required.
 
 from __future__ import annotations
 
-import numpy as np
 from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-
-from .config import Settings
 
 
 def list_models() -> list[str]:
@@ -74,54 +71,60 @@ def build_pipeline(model_name: str, random_seed: int = 42) -> Pipeline:
     scalers = {"preprocessor": StandardScaler()}
 
     estimators: dict[str, Pipeline] = {
-        "dummy": Pipeline([
-            *scalers.items(),
-            ("model", DummyClassifier(strategy="most_frequent", random_state=random_seed)),
-        ]),
-        "logistic_regression": Pipeline([
-            *scalers.items(),
-            (
-                "model",
-                LogisticRegression(
-                    C=1.0,
-                    solver="lbfgs",
-                    max_iter=2000,
-                    random_state=random_seed,
+        "dummy": Pipeline(
+            [
+                *scalers.items(),
+                ("model", DummyClassifier(strategy="most_frequent", random_state=random_seed)),
+            ]
+        ),
+        "logistic_regression": Pipeline(
+            [
+                *scalers.items(),
+                (
+                    "model",
+                    LogisticRegression(
+                        C=1.0,
+                        solver="lbfgs",
+                        max_iter=2000,
+                        random_state=random_seed,
+                    ),
                 ),
-            ),
-        ]),
-        "random_forest": Pipeline([
-            *scalers.items(),
-            (
-                "model",
-                RandomForestClassifier(
-                    n_estimators=300,
-                    max_depth=None,
-                    min_samples_split=5,
-                    random_state=random_seed,
+            ]
+        ),
+        "random_forest": Pipeline(
+            [
+                *scalers.items(),
+                (
+                    "model",
+                    RandomForestClassifier(
+                        n_estimators=300,
+                        max_depth=None,
+                        min_samples_split=5,
+                        random_state=random_seed,
+                    ),
                 ),
-            ),
-        ]),
-        "gradient_boosting": Pipeline([
-            *scalers.items(),
-            (
-                "model",
-                GradientBoostingClassifier(
-                    n_estimators=300,
-                    learning_rate=0.05,
-                    max_depth=3,
-                    subsample=0.8,
-                    random_state=random_seed,
+            ]
+        ),
+        "gradient_boosting": Pipeline(
+            [
+                *scalers.items(),
+                (
+                    "model",
+                    GradientBoostingClassifier(
+                        n_estimators=300,
+                        learning_rate=0.05,
+                        max_depth=3,
+                        subsample=0.8,
+                        random_state=random_seed,
+                    ),
                 ),
-            ),
-        ]),
+            ]
+        ),
     }
 
     if model_name not in estimators:
         available = ", ".join(sorted(estimators.keys()))
-        raise ValueError(
-            f"Unknown model '{model_name}'. Available models: {available}"
-        )
+        raise ValueError(f"Unknown model '{model_name}'. Available models: {available}")
     return estimators[model_name]
 
 

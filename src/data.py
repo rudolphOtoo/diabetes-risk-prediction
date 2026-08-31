@@ -121,9 +121,12 @@ def process_data(paths: Paths | None = None, impute_mode: str = "median") -> pd.
     frame[structurally_zero] = frame[structurally_zero].replace(0.0, np.nan)
 
     # 3. Impute missing clinical measurements.
-    frame[FEATURE_COLUMNS] = frame[FEATURE_COLUMNS].fillna(
-        frame[FEATURE_COLUMNS].median() if impute_mode == "median" else frame[FEATURE_COLUMNS].mean()
+    imputation_values = (
+        frame[FEATURE_COLUMNS].median()
+        if impute_mode == "median"
+        else frame[FEATURE_COLUMNS].mean()
     )
+    frame[FEATURE_COLUMNS] = frame[FEATURE_COLUMNS].fillna(imputation_values)
 
     # 4. Persist the processed frame for downstream reuse.
     paths.processed_data.mkdir(parents=True, exist_ok=True)

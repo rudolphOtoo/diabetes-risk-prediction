@@ -18,9 +18,6 @@ validation, and test membership lists when the master seed is unchanged.
 
 from __future__ import annotations
 
-from typing import Sequence
-
-import numpy as np
 import pandas as pd
 from sklearn.model_selection import StratifiedKFold, train_test_split
 
@@ -49,9 +46,7 @@ def _extract_xy(frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
     """
     missing_features = [col for col in FEATURE_COLUMNS if col not in frame.columns]
     if missing_features:
-        raise KeyError(
-            f"Missing required feature columns in the input frame: {missing_features}"
-        )
+        raise KeyError(f"Missing required feature columns in the input frame: {missing_features}")
     if TARGET_COLUMN not in frame.columns:
         raise KeyError(
             f"Target column '{TARGET_COLUMN}' not found. "
@@ -62,9 +57,7 @@ def _extract_xy(frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
     return X, y
 
 
-def _derived_random_state(
-    master_seed: int, context_label: str = "default"
-) -> int:
+def _derived_random_state(master_seed: int, context_label: str = "default") -> int:
     """Derive a child seed deterministically from the master seed.
 
     This guarantees that multiple independent operations (e.g., three different

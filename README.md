@@ -262,19 +262,29 @@ jupyter notebook notebooks/01_eda.ipynb
 
 ---
 
-## 🧪 Testing
+## 🧪 Quality Assurance (CI)
 
 The repository ships a `pytest` suite asserting the invariants that matter most
-for an admissions reviewer. It runs both locally and on every push / pull
-request via the [GitHub Actions workflow](.github/workflows/ci.yml) across
-Python 3.10–3.12:
+for an admissions reviewer, plus `ruff` linting and formatting checks. All three
+run automatically via the [GitHub Actions workflow](.github/workflows/ci.yml)
+on every push / pull request — the test suite across Python 3.10–3.12, linting
+on Python 3.12. One terminal command reproduces the entire CI gate locally:
 
 ```bash
 source .venv/bin/activate
-python -m pytest tests/ -v
+pip install ruff            # dev dependency (also in `pyproject.toml [dev]`)
+make check                  # ruff lint + format-check + pytest -q
 ```
 
-This verifies preprocessing shape/class balance, stratification, split
+or step-by-step:
+
+```bash
+python -m pytest tests/ -v          # run all unit tests
+ruff check src/ tests/              # lint
+ruff format --check src/ tests/     # formatting
+```
+
+The tests verify preprocessing shape/class balance, stratification, split
 reproducibility, and that every model trains and scores within valid bounds.
 
 ---
