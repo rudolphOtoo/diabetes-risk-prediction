@@ -83,31 +83,29 @@ def load_raw_frame(paths: Paths | None = None) -> pd.DataFrame:
     return pd.read_csv(raw_file)
 
 
-def process_data(paths: Paths | None = None, impute_mode: str = "median") -> pd.DataFrame:
-    """Apply the preprocessing and feature-engineering recipe end-to-end.
+def process_data(paths: Paths | None = None) -> pd.DataFrame:
+    """Apply the raw-data cleaning recipe without any model-facing statistics.
 
-    Steps performed
-    ---------------
-    1. Load the raw CSV.
-    2. Coerce the clinical columns to ``float`` (catching malformed entries).
-    3. Repair physiologically impossible zero values (a common occurrence in
-       this dataset) : variables that cannot legitimately be zero are
-       re-encoded as :data:`numpy.nan`.
-    4. Impute the missing clinical values (median by default).
-    5. Persist the processed frame under ``data/processed``.
+    This step is deliberately **free of imputation**. It only (1) coerces the
+    clinical columns to numeric, and (2) re-encodes physiologically impossible
+    zero measurements (e.g., ``BloodPressure = 0``) as missing (``NaN``). The
+    repository of missing values is then passed to the modelling stage, where
+    median imputation is performed *inside each scikit-learn ``Pipeline``* on
+    the training folds only — this keeps all preprocessing contained within the
+    cross-validation folds and prevents any test statistics from leaking into
+    training (see ``src/models.py``).
 
     Parameters
     ----------
     paths : Paths | None
         Path configuration. Defaults to the project-level canonical ``Paths``.
-    impute_mode : str
-        Imputation strategy passed through to :func:`pandas.Series.fillna`.
-        Supported: ``"median"`` (robust) or ``"mean"``.
 
     Returns
     -------
     pandas.DataFrame
-        The cleaned, imputed frame with 768 rows and 9 columns.
+        The cleaned frame with 768 rows and 9 columns; clinical columns are
+        numeric and may still contain ``NaN`` where zero measurements were
+        repaired.
     """
     paths = paths or Paths()
     frame: pd.DataFrame = load_raw_frame(paths)
@@ -120,15 +118,8 @@ def process_data(paths: Paths | None = None, impute_mode: str = "median") -> pd.
     structurally_zero = ["BloodPressure", "SkinThickness", "Insulin", "BMI"]
     frame[structurally_zero] = frame[structurally_zero].replace(0.0, np.nan)
 
-    # 3. Impute missing clinical measurements.
-    imputation_values = (
-        frame[FEATURE_COLUMNS].median()
-        if impute_mode == "median"
-        else frame[FEATURE_COLUMNS].mean()
-    )
-    frame[FEATURE_COLUMNS] = frame[FEATURE_COLUMNS].fillna(imputation_values)
-
-    # 4. Persist the processed frame for downstream reuse.
+    # 3. Persist the cleaned frame for downstream reuse. Missing entries are
+    #    intentionally retained here; imputation happens at model fit time.
     paths.processed_data.mkdir(parents=True, exist_ok=True)
     frame.to_csv(paths.processed_data / PROCESSED_FILENAME, index=False)
 

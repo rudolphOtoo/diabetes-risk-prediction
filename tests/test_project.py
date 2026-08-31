@@ -46,13 +46,30 @@ def test_preprocessing_feature_columns(processed_frame: pd.DataFrame) -> None:
     assert all(pd.api.types.is_numeric_dtype(t) for t in processed_frame[FEATURE_COLUMNS].dtypes)
 
 
-def test_no_missing_values_after_imputation(processed_frame: pd.DataFrame) -> None:
-    """Median imputation of pathological zeros leaves no NaNs."""
-    assert not processed_frame[FEATURE_COLUMNS].isna().any().any()
+def test_process_data_retains_missing_values(processed_frame: pd.DataFrame) -> None:
+    """Cleaning repairs pathological zeros to NaN but does NOT impute them.
+
+    Imputation is intentionally deferred to each model's ``Pipeline`` (a
+    ``SimpleImputer`` leading stage) so that imputation statistics are fitted on
+    training folds only — the whole point of the zero-leakage design.
+    """
+    assert processed_frame[FEATURE_COLUMNS].isna().any().any()
 
 
-def test_class_balance_preserved_after_imputation(processed_frame: pd.DataFrame) -> None:
-    """Patch that imputation does not alter the target counts."""
+def test_pipeline_imputes_missing_values(processed_frame: pd.DataFrame) -> None:
+    """The Pipeline's leading SimpleImputer must yield a finite feature matrix."""
+    splits = split_features_target(processed_frame)
+    X_train = splits["X_train"]
+
+    pipe: Pipeline = build_pipeline("logistic_regression", random_seed=42)
+    imputer = pipe.named_steps["imputer"]
+    imputed = imputer.fit_transform(X_train)
+
+    assert not pd.isna(imputed).any()
+
+
+def test_class_balance_preserved(processed_frame: pd.DataFrame) -> None:
+    """Cleaning must not alter the outcome target counts."""
     counts = processed_frame[TARGET_COLUMN].value_counts().sort_index()
     assert counts[0] == 500
     assert counts[1] == 268

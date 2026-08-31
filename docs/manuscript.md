@@ -11,14 +11,15 @@ framework** for binary diabetes risk stratification on the Pima Indians
 Diabetes Database ($n = 768$). Three methodological contributions are
 emphasized. First, a **strict stratified train/validation/test protocol** with
 a single deterministic master seed eliminates both data leakage and selection
-bias. Second, all standardization is encapsulated **inside scikit-learn
-`Pipeline` objects**, fitted only on training folds, so estimators never observe
-test statistics at fit time. Third, evaluation is **class-imbalance-aware**,
-prioritizing ROC-AUC, the $F_1$-score, and the Matthews correlation
-coefficient (MCC) over raw accuracy. A regularised logistic-regression model
-achieves a held-out ROC-AUC of ≈ 0.83 — statistically matching more expensive
-tree ensembles while remaining fully interpretable — disciplined by a
-93%-coverage unit-test suite and an automated CI/CD matrix. *(137 words)*
+bias. Second, *all* preprocessing — median imputation and standardization — is
+encapsulated **inside scikit-learn `Pipeline` objects**, fitted only on training
+folds, so estimators never observe test statistics at fit time. Third,
+evaluation is **class-imbalance-aware**, prioritizing ROC-AUC, the $F_1$-score,
+and the Matthews correlation coefficient (MCC) over raw accuracy. A regularised
+logistic-regression model achieves a held-out ROC-AUC of ≈ 0.83 — statistically
+matching more expensive tree ensembles while remaining fully interpretable —
+disciplined by a 93%-coverage unit-test suite and an automated CI/CD matrix.
+*(147 words)*
 
 ---
 
@@ -64,24 +65,25 @@ is `src/scripts/run_pipeline.py`.
 
 The Pima dataset ($n = 768$, $8$ predictors, binary `Outcome`) contains several
 **physiologically impossible zero values** — e.g., `BloodPressure = 0` or
-`BMI = 0`. These do not represent genuine measures but missing entries. The
-preprocessing recipe (`src/data.py`) therefore:
-1. coerces clinical columns to numeric,
+`BMI = 0`. These do not represent genuine measures but missing entries. Data
+cleaning (`src/data.py`) therefore only:
+1. coerces clinical columns to numeric, and
 2. re-encodes impossible zeros in `BloodPressure`, `SkinThickness`, `Insulin`,
-   and `BMI` as missing, and
-3. imputes with the **column median** (robust to the strongly right-skewed
-   `Insulin` distribution).
+   and `BMI` as missing (`NaN`).
 
-Critically, **standardization** lives *inside* each model's
-`sklearn.pipeline.Pipeline`, so the scaler is fitted only on training folds
-(`src/models.py`). This eliminates the classic pipeline antipattern in which
-test *scaling* statistics leak into training, inflating reported
-generalization. Median **imputation**, by contrast, is a lightweight offline
-step applied once in `src/data.py` before splitting, using column medians
-computed over the full corpus; because imputation here is *not* fitted from the
-target and has a small, bounded influence, it is standard practice in small
-clinical datasets, though a fully pipeline-contained `SimpleImputer` is the
-recommended next step for a strictly zero-leakage estimator.
+**All remaining preprocessing is contained inside each model's pipeline**
+(`src/models.py`). Every fitted pipeline has the leading stages
+`SimpleImputer(strategy="median") → StandardScaler`, so:
+3. missing values are filled with the **column median** (robust to the strongly
+   right-skewed `Insulin` distribution), and
+4. features are standardized.
+
+Because these stages are part of the `sklearn.pipeline.Pipeline`, both the
+imputation medians and the scaling parameters are fitted **only on training
+folds** during cross-validation and never observe test data. This eliminates
+the classic pipeline antipattern in which test statistics leak into training
+and inflate reported generalization — the preprocessing is, in the strictest
+sense, zero-leakage.
 
 A **stratified three-way split** (60 / 20 / 20) is applied via
 `train_test_split(..., stratify=y)` (`src/features.py`). Stratification

@@ -1,9 +1,11 @@
 """Model specification and ``sklearn.pipeline.Pipeline`` construction.
 
 Every model in this project is wrapped in a scikit-learn ``Pipeline``. This
-design guarantees that preprocessing (e.g., scaling) is applied *within* each
-fold of cross-validation, preventing a particularly common and insidious form
-of data leakage.
+design guarantees that *all* preprocessing — median imputation
+(``SimpleImputer``) **and** standardization (``StandardScaler``) — is applied
+*within* each fold of cross-validation, preventing test statistics from leaking
+into training and eliminating a particularly common and insidious form of data
+leakage.
 
 Model family rationale
 ----------------------
@@ -26,6 +28,7 @@ from __future__ import annotations
 
 from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
+from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -44,10 +47,13 @@ def list_models() -> list[str]:
 
 
 def build_pipeline(model_name: str, random_seed: int = 42) -> Pipeline:
-    """Construct a fully contained scikit-learn ``Pipeline``.
+    """Construct a fully contained, leakage-free scikit-learn ``Pipeline``.
 
-    The ``StandardScaler`` lives inside the pipeline so that it is fit on
-    training folds only — a strict requirement for honest model evaluation.
+    Imputation (``SimpleImputer``) and standardization (``StandardScaler``)
+    both live *inside* the pipeline as leading stages, so every preprocessing
+    statistic — median, and scaling mean/scale — is fit on training folds only.
+    This makes the pipeline strict about data hygiene: no test-set information
+    is observed by any preprocessing step or estimator.
 
     Parameters
     ----------
@@ -60,26 +66,29 @@ def build_pipeline(model_name: str, random_seed: int = 42) -> Pipeline:
     Returns
     -------
     sklearn.pipeline.Pipeline
-        A pipeline with two stages: ``"preprocessor"`` (scaler) and
-        ``"model"`` (the chosen estimator).
+        A pipeline with three stages: ``"imputer"`` (median), ``"preprocessor"``
+        (scaler), and ``"model"`` (the chosen estimator).
 
     Raises
     ------
     ValueError
         If ``model_name`` does not match any registered identifier.
     """
-    scalers = {"preprocessor": StandardScaler()}
+    leading_stages: list[tuple[str, object]] = [
+        ("imputer", SimpleImputer(strategy="median")),
+        ("preprocessor", StandardScaler()),
+    ]
 
     estimators: dict[str, Pipeline] = {
         "dummy": Pipeline(
             [
-                *scalers.items(),
+                *leading_stages,
                 ("model", DummyClassifier(strategy="most_frequent", random_state=random_seed)),
             ]
         ),
         "logistic_regression": Pipeline(
             [
-                *scalers.items(),
+                *leading_stages,
                 (
                     "model",
                     LogisticRegression(
@@ -93,7 +102,7 @@ def build_pipeline(model_name: str, random_seed: int = 42) -> Pipeline:
         ),
         "random_forest": Pipeline(
             [
-                *scalers.items(),
+                *leading_stages,
                 (
                     "model",
                     RandomForestClassifier(
@@ -107,7 +116,7 @@ def build_pipeline(model_name: str, random_seed: int = 42) -> Pipeline:
         ),
         "gradient_boosting": Pipeline(
             [
-                *scalers.items(),
+                *leading_stages,
                 (
                     "model",
                     GradientBoostingClassifier(

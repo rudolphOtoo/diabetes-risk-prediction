@@ -28,10 +28,10 @@ The project emphasises **methodological rigor**, not just predictive accuracy:
 
 - **Strict data hygiene** — a three-way *train / validation / test* split with
   stratification, preventing both data leakage and selection bias.
-- **Leakage-aware preprocessing** — standardization (scaling) is fitted *inside*
-  each scikit-learn `Pipeline` on training folds only, so estimators never
-  observe test statistics at fit time. (Median *imputation* is applied during
-  offline preprocessing; see the Limitation note.)
+- **Leakage-aware preprocessing** — *all* preprocessing (median **imputation**
+  and **scaling**) is contained *inside* each scikit-learn `Pipeline`
+  (`SimpleImputer` → `StandardScaler`), so every preprocessing statistic is fit
+  on training folds only. Estimators never observe test statistics at fit time.
 - **Class-imbalance-aware evaluation** — primary metrics are **ROC-AUC** and
   **F1-score**, complemented by accuracy, precision, recall, and the Matthews
   correlation coefficient.
@@ -98,22 +98,32 @@ preserved across partitions).
 
 The raw Pima dataset contains several **physiologically impossible zero
 values** (e.g., `BloodPressure = 0`, `BMI = 0`). These are not true zeros but
-missing measurements. The pipeline (in `src/data.py`):
+missing measurements. Cleaning (in `src/data.py`) **only**:
 
 1. Coerces clinical columns to numeric.
 2. Re-encodes impossible zeros in `BloodPressure`, `SkinThickness`, `Insulin`,
    and `BMI` as `NaN`.
-3. Imputes missing values with the **column median** (robust to the strongly
-   right-skewed `Insulin` distribution).
+
+Imputation is deliberately **not** performed here. Instead, every model's
+`Pipeline` (in `src/models.py`) begins with:
+
+3. `SimpleImputer(strategy="median")` — fills missing values with the column
+   median, fitted on **training folds only** (robust to the strongly
+   right-skewed `Insulin` distribution);
+4. `StandardScaler` — standardizes features, also fitted on training folds.
+
+No preprocessing statistic is ever computed from test data.
 
 ### 2 · Feature Engineering
 
-The eight raw predictor variables are used as-is, with **standard scaling**
-applied *within* each pipeline. No target-derived leakage enters any feature.
+The eight raw predictor variables are used as-is, with median **imputation**
+and **standard scaling** applied *within* each model's Pipeline. No
+target-derived leakage enters any feature.
 
 ### 3 · Models
 
-Every model is a scikit-learn `Pipeline` (`StandardScaler` → estimator):
+Every model is a scikit-learn `Pipeline`
+(`SimpleImputer` → `StandardScaler` → estimator):
 
 | Model | Role | Rationale |
 |---|---|---|
@@ -139,13 +149,13 @@ Every model is a scikit-learn `Pipeline` (`StandardScaler` → estimator):
 .
 ├── data/
 │   ├── raw/            # original Pima CSV (auto-downloaded once)
-│   └── processed/      # cleaned, median-imputed frame (generated)
+│   └── processed/      # cleaned frame (zeros → missing; NOT yet imputed)
 ├── notebooks/          # narrative EDA, modeling, and tuning walkthroughs
 ├── src/                # importable research package
 │   ├── config.py       # paths & global hyperparameter/settings dataclasses
-│   ├── data.py         # download + preprocessing + imputation
+│   ├── data.py         # download + cleaning (type coercion, zero repair)
 │   ├── features.py     # stratified split + cross-validation + seed derivation
-│   ├── models.py       # baseline & ensemble pipelines + param grids
+│   ├── models.py       # leak-free pipelines (impute → scale → estimator)
 │   ├── evaluate.py     # metric computation + benchmark table aggregation
 │   ├── tune.py         # GridSearchCV wrapper (strict train-only tuning)
 │   ├── visualize.py    # publication-quality figure functions
@@ -219,12 +229,14 @@ Three independent mechanisms guarantee a reviewer can reproduce every number:
 
 1. **Deterministic seeding** — a single master seed (`42`, in `src/config.py`)
    is deterministically expanded into child seeds for every `train_test_split`
-   and model. Re-running yields identical partitions and identical fits.
-2. **Leakage-safe `Pipeline`s** — scaling and any future feature transforms are
-   fitted *within* each CV fold, so estimates of generalisation are unbiased.
-3. **Explicit dependency manifests** — `requirements.txt` and `environment.yml`
-   list a pinned core stack (`numpy`, `pandas`, `scikit-learn`, `matplotlib`,
-   `seaborn`, `joblib`).
+   and model. Re-running yields identical partitions and identical fits across
+   processes and machines.
+2. **Leakage-safe `Pipeline`s** — *all* preprocessing (median imputation
+   **and** scaling) is fitted *within* each CV fold, so estimates of
+   generalisation are unbiased.
+3. **Explicit dependency manifests** — `requirements.txt`,
+   `requirements.lock`, and `environment.yml` pin the core stack (`numpy`,
+   `pandas`, `scikit-learn`, `matplotlib`, `seaborn`, `joblib`).
 
 The dataset is downloaded once into `data/raw/` and cached; subsequent runs are
 fully **offline** and deterministic.
