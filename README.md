@@ -8,6 +8,7 @@ diabetes risk using the Pima Indians Diabetes Database.**
 [![Coverage](https://img.shields.io/badge/coverage-93%25-brightgreen.svg)](https://codecov.io/gh/rudolphOtoo/diabetes-risk-prediction)
 [![Pages](https://img.shields.io/badge/Live-Notebooks-0b7285.svg)](https://rudolphOtoo.github.io/diabetes-risk-prediction/)
 [![Manuscript](https://img.shields.io/badge/Manuscript-Read-6f42c1.svg)](docs/manuscript.md)
+[![PDF](https://img.shields.io/badge/PDF-v1.0-orange.svg)](https://github.com/rudolphOtoo/diabetes-risk-prediction/releases/tag/manuscript-pdf)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 > **Author:** Rudolph Otoo · **Domain:** Machine Learning / Health Informatics
@@ -42,7 +43,9 @@ The project emphasises **methodological rigor**, not just predictive accuracy:
 matching the more computationally expensive tree ensembles while remaining
 fully interpretable — lifting discrimination roughly **+33 pp. of ROC-AUC over
 the majority-class baseline** in a fully transparent, extensible framework.
-A live conference-style write-up is available in [`docs/manuscript.md`](docs/manuscript.md).
+A live conference-style write-up is available in
+[`docs/manuscript.md`](docs/manuscript.md), and an auto-rendered **PDF** is
+published to each [release](https://github.com/rudolphOtoo/diabetes-risk-prediction/releases/tag/manuscript-pdf).
 
 ---
 
@@ -147,7 +150,8 @@ Every model is a scikit-learn `Pipeline` (`StandardScaler` → estimator):
 │       └── run_pipeline.py   # end-to-end CLI entry point
 ├── tests/              # pytest suite (15 tests, 93% coverage)
 ├── docs/
-│   └── manuscript.md   # conference-style write-up of this project
+│   ├── manuscript.md      # conference-style write-up (source)
+│   └── manuscript.pdf     # auto-rendered PDF (via CI, per release)
 ├── site/
 │   └── index.html      # GitHub Pages landing page
 ├── reports/
