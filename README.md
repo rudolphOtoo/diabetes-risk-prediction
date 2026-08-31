@@ -3,6 +3,9 @@
 **A rigorous, reproducible classification study for early detection of type-2
 diabetes risk using the Pima Indians Diabetes Database.**
 
+![CI](https://github.com/rudolphOtoo/diabetes-risk-prediction/actions/workflows/ci.yml/badge.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 > **Author:** Rudolph Otoo · **Domain:** Machine Learning / Health Informatics
 
 ---
@@ -262,7 +265,9 @@ jupyter notebook notebooks/01_eda.ipynb
 ## 🧪 Testing
 
 The repository ships a `pytest` suite asserting the invariants that matter most
-for an admissions reviewer:
+for an admissions reviewer. It runs both locally and on every push / pull
+request via the [GitHub Actions workflow](.github/workflows/ci.yml) across
+Python 3.10–3.12:
 
 ```bash
 source .venv/bin/activate

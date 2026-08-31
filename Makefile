@@ -18,7 +18,7 @@ PIP      := $(VENV)/bin/pip
 PYTHON_V := $(VENV)/bin/python
 SRC      := src
 
-.PHONY: help setup fetch-data preprocess train evaluate all clean
+.PHONY: help setup fetch-data preprocess train evaluate test all clean
 
 help:
 	@echo ""
@@ -27,9 +27,9 @@ help:
 	@echo "  make setup          Create venv and install deps"
 	@echo "  make fetch-data     Download Pima dataset"
 	@echo "  make preprocess     Run preprocessing pipeline"
-	@echo "  make train          Train + cross-validate models"
-	@echo "  make evaluate       Evaluate best model on test set"
-	@echo "  make all            Full end-to-end pipeline"
+	@echo "  make train          Train, tune, and evaluate all models"
+	@echo "  make test           Run the pytest suite"
+	@echo "  make all            fetch-data → preprocess → train"
 	@echo "  make clean          Remove generated artefacts"
 	@echo ""
 
@@ -49,14 +49,14 @@ preprocess:
 	$(PYTHON_V) -c "from src.data import process_data; process_data()"
 
 train:
-	@echo "▸ Training and tuning models (this may take a few minutes) ..."
+	@echo "▸ Training, tuning, and evaluating models (this may take a few minutes) ..."
 	$(PYTHON_V) -m src.scripts.run_pipeline
 
-evaluate:
-	@echo "▸ Evaluating models on held-out test set ..."
-	$(PYTHON_V) -m src.scripts.run_pipeline
+test:
+	@echo "▸ Running pytest suite ..."
+	$(PYTHON_V) -m pytest tests/ -v
 
-all: fetch-data preprocess train evaluate
+all: fetch-data preprocess train
 	@echo ""
 	@echo "✓ Full pipeline completed successfully."
 	@echo "  Reports  → reports/"
