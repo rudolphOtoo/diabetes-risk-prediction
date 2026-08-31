@@ -6,6 +6,7 @@ diabetes risk using the Pima Indians Diabetes Database.**
 ![CI](https://github.com/rudolphOtoo/diabetes-risk-prediction/actions/workflows/ci.yml/badge.svg)
 [![codecov](https://codecov.io/gh/rudolphOtoo/diabetes-risk-prediction/branch/main/graph/badge.svg)](https://codecov.io/gh/rudolphOtoo/diabetes-risk-prediction)
 [![Coverage](https://img.shields.io/badge/coverage-93%25-brightgreen.svg)](https://codecov.io/gh/rudolphOtoo/diabetes-risk-prediction)
+[![Pages](https://img.shields.io/badge/Live-Notebooks-0b7285.svg)](https://rudolphOtoo.github.io/diabetes-risk-prediction/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 > **Author:** Rudolph Otoo · **Domain:** Machine Learning / Health Informatics
@@ -250,8 +251,12 @@ python -m src.scripts.run_pipeline                               # full pipeline
 
 ### Explore the notebooks
 
-Notebooks assume you are in the `notebooks/` directory (they add the repo root
-to `sys.path`):
+**[View the rendered notebooks live](https://rudolphOtoo.github.io/diabetes-risk-prediction/)** —
+the deployment workflow (`.github/workflows/pages.yml`) converts them to HTML on
+every push to `main` and serves them via GitHub Pages.
+
+Locally, notebooks assume you are in the `notebooks/` directory (they add the
+repo root to `sys.path`):
 
 ```bash
 source .venv/bin/activate
